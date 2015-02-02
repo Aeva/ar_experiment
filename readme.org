@@ -1,0 +1,104 @@
+* overview
+What follows is an excerpt from my notes.  In this repository, I am
+building a python server that will connect to vnc servers and generate
+frame buffers that it can pass into m.grl via websockets.
+
+** TODO prototype
+
+ - [X] build a simple http server with aiohttp that serves static
+       files.
+
+ - [ ] build a websocket example with this, and use the httpd part to
+       serve a simple websocket file.
+
+ - [ ] build a tcp listener that, I guess, just pushes the data to the
+       browser?
+
+ - [ ] connect a vnc server to it and see what happens?
+
+ - [ ] try to implement some kind of translation system so that you
+      can just push base64 or binary image data to the browser
+
+ - [ ] start pulling in mgrl functionality and make the window hover
+       and bob about in perspective projection
+
+From here, you might start looking to automatically generate vnc
+sessions for all of your open windows (if there is a straightforward
+way to query this).  It might also be good at this point to look into
+making some kind of gtk shell that lists all of the connected vnc
+sessions, provide the ability to close / kill connections and add new
+ones.
+
+** implementation research
+It looks like with asyncio, I'll be able to throw together an
+all-in-one server for this project, covering http, websockets, tcp
+connections, and other adventures.
+
+ - "aiohttp" will likely be that which serves media files for the
+   m.grl side of thing
+
+ - "aiohttp" apparently has websocket functionality, so it can be used
+   to facilitate communication between the server and the simulation.
+   http://aiohttp.readthedocs.org/en/v0.14.4/web.html#websockets
+
+ - asyncio stuff provieds a nice low level access to things like tcp
+   etc. You'll probably want to use the "stream api" for communicating
+   with a VNC server.
+
+ - it looks like a lot of languages have the ability to be websocket
+   clients in addition to being servers.  This might be a good control
+   mechanism for spinning up vnc sessions.  Or otherwise allowing
+   communicating between m.grl and other things.  It would be helpful
+   to add some way of having this also listen to outside vnc servers
+   as well as the ones it spins up automatically.
+
+ - asyncio has some variety of subprocess wrapping, so we could let
+   the python application manage all of the x11vnc connections (and
+   restart any that crash right away as well as set random passwords
+   for each).
+
+
+Some other features that would be nice in the future:
+
+ - ability to start applications in new x sessions with arbitrary
+   screen sizes (probably still going by window id and not the full x
+   session because that is annoying)
+
+ - interface for allowing programs to communicate with the server.
+   obligatory emacs integration (most likely for creating arbitrarily
+   sized frames in another x session?) and to allow blender to export
+   arbitrary models (jta formatted, maybe, saved to a temp file) to be
+   then imported into the scene and moved around.
+
+ - option to autogenerate a pem file and require https / wss
+
+
+Other things to look into
+
+ - Apparently "gbulb" allows gobject stuff to play nice inside of
+   asyncio - so you could have a nice gtk interface for all of this
+   stuff without issue.
+
+more info here:
+https://stackoverflow.com/questions/26675297/asyncio-calls-running-in-gtk-main-loop?rq=1
+
+** single window shaing
+First run this:
+
+--> xwininfo
+
+To get the x window id, which you can
+ then pass into x11vnc like so:
+
+ --> x11vnc -id 0x380004a -forever
+
+Consider setting up a password and other security precautions.
+
+** cursor fighting
+If the client and server are in the same x session, the cursor will
+start "teleporting" when you try to interact with the VNC window.  The
+easiest remedy might end up being having the VR stuff served from a
+second X session.  This might be also further nice in that it could
+make it so that the VR stuff only is visible from the goggles and is
+not onscreen.
+
