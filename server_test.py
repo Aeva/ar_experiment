@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import glob
 import os.path
 import asyncio
 from aiohttp import web
@@ -9,22 +8,20 @@ from aiohttp import web
 @asyncio.coroutine
 def static_serve(request):
     match_path = request.match_info['all']
-    found = glob.glob(os.path.join("public", match_path))
+    found = os.path.join("public", match_path)
 
     serve = None
-    if len(found) == 1:
-        found = found[0]
-        # found something to serve
-        if os.path.isfile(found):
-            # found a file to serve
-            serve = found
+
+    if os.path.isfile(found):
+        # found a file to serve
+        serve = found
             
-        elif os.path.isdir(found):
-            # index special case
-            redirect = not match_path.endswith("/")
-            index_file = os.path.join(found, "index.html")
-            if os.path.isfile(index_file):
-                serve = index_file
+    elif os.path.isdir(found):
+        # index special case
+        redirect = not match_path.endswith("/")
+        index_file = os.path.join(found, "index.html")
+        if os.path.isfile(index_file):
+            serve = index_file
 
     if serve:
         with open(serve, "rb") as response_file:
