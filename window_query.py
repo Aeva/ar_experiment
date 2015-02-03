@@ -15,7 +15,7 @@ def get_open_windows():
     """
     Returns a list of WindowInfo objects for all open windows.
     """
-    return list(map(WindowInfo, get_window_list()))
+    return list(map(WindowInfo, get_window_ids()))
 
 
 class WindowInfo(object):
