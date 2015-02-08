@@ -9,25 +9,6 @@ import window_query
 
 
 @asyncio.coroutine
-def vnc_subproc(window, password, port):
-    cmd = ["x11vnc",
-           "-id", window.window_id,
-           "-localhost",
-           "-passwd", password,
-           "-httpport", str(port)]
-
-    print("serving vnc on (localhost, {0}) : {1} : {2}".format(
-        port, password, window.title))
-
-    create = asyncio.create_subprocess_exec(
-        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-    proc = yield from create
-    print("DEBUG: seems to block after this point :/")
-    yield from proc.wait()
-    print("vnc process closed")
-
-
-@asyncio.coroutine
 def static_serve(request):
     match_path = request.match_info['all']
     found = os.path.join("public", match_path)
@@ -54,6 +35,22 @@ def static_serve(request):
         return web.Response(text="404!")
 
 
+def vnc_subproc(loop, window, password, port):
+    cmd = ["x11vnc",
+           "-id", window.window_id,
+           "-localhost",
+           "-passwd", password,
+           "-httpport", str(port)]
+
+    print("serving vnc on (localhost, {0}) : {1} : {2}".format(
+        port, password, window.title))
+
+    create = asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    proc = yield from create
+    loop.run_until_complete(proc.communicate)
+
+
 def httpd(loop):
     """
     Serve content over http.
@@ -75,11 +72,11 @@ def main():
     # start up vnc servers for each window
     vnc_servers = {}
     last_port = 14900
-    for window in window_query.get_open_windows():
+    window_set = window_query.get_open_windows()
+    for window in window_set:
         password = pwgen(8, 1).strip()
         last_port = port = last_port + 1
-        loop.run_until_complete(vnc_subproc(window, password, port))
-        print("DEBUG: never reached")
+        vnc_subproc(loop, window, password, port)
         vnc_servers[window.window_id] = {
             "password" : password,
             "info" : window,
@@ -87,7 +84,13 @@ def main():
         }
 
     # start up tcp listeners for each vnc server
-    
+    print("Now serving:")
+    for server in vnc_servers.values():
+        print(" - localhost:{0} ({1}) {2}".format(
+            server["port"],
+            server["password"],
+            server["info"].title,
+            ))
 
     # enter the event loop
     try:
