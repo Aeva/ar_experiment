@@ -27,12 +27,9 @@ frame buffers that it can pass into m.grl via websockets.
  - [ ] start pulling in mgrl functionality and make the window hover
        and bob about in perspective projection
 
-From here, you might start looking to automatically generate vnc
-sessions for all of your open windows (if there is a straightforward
-way to query this).  It might also be good at this point to look into
-making some kind of gtk shell that lists all of the connected vnc
-sessions, provide the ability to close / kill connections and add new
-ones.
+Here might be good point to look into making some kind of gtk shell
+that lists all of the connected vnc sessions, provide the ability to
+close / kill connections and add new ones.
 
 ** implementation research
 It looks like with asyncio, I'll be able to throw together an
